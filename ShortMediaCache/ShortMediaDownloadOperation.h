@@ -12,8 +12,13 @@
 
 @interface ShortMediaDownloadOperation : NSOperation <NSURLSessionTaskDelegate, NSURLSessionDataDelegate>
 
+@property (nonatomic, assign) ShortMediaOptions options;
+
+@property (nonatomic, strong) NSURLCredential *credential;
+
 - (instancetype)initWithRequest:(NSURLRequest *)request
                         session:(NSURLSession *)session
+                        options:(ShortMediaOptions)options
                        progress:(ShortMediaProgressBlock)progress
                      completion:(ShortMediaCompletionBlock)completion;
 

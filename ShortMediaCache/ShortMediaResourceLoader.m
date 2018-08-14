@@ -7,14 +7,15 @@
 //
 
 #import "ShortMediaResourceLoader.h"
-#import "ShortMediaManager.h"
-
+#import "AVAssetResourceLoadingDataRequest+ShortMediaCache.h"
 #import <MobileCoreServices/MobileCoreServices.h>
 
 @interface ShortMediaResourceLoader()<AVAssetResourceLoaderDelegate>
 @property (nonatomic, strong, readonly) NSURL *url;
 @property (nonatomic, strong) NSMutableArray *pendingRequests;
 @property (nonatomic, assign) NSInteger expectedSize;
+@property (nonatomic, assign) NSInteger receivedSize;
+@property (nonatomic, assign) ShortMediaOptions options;
 @end
 
 @implementation ShortMediaResourceLoader
@@ -26,29 +27,39 @@
     return self;
 }
 
+- (instancetype)initWithDelegate:(id<ShortMediaResourceLoaderDelegate>)delegate {
+    _delegate = delegate;
+    return [self init];
+}
+
 - (AVPlayerItem *)playItemWithUrl:(NSURL *)url {
+    return [self playItemWithUrl:url options:kNilOptions];
+}
+
+- (AVPlayerItem *)playItemWithUrl:(NSURL *)url options:(ShortMediaOptions)options {
     _url = url;
+    _options = options;
+    [self startLoading];
     AVURLAsset *asset = [AVURLAsset URLAssetWithURL:[self unRecognizerUrl] options:nil];
     [asset.resourceLoader setDelegate:self queue:dispatch_get_main_queue()];
     AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:asset];
-    __weak typeof(self) _self = self;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        __strong typeof(_self) self = _self;
-        [self startLoading];
-    });
     return item;
 }
 
 - (void)startLoading {
     __weak typeof(self) _self = self;
-    [[ShortMediaManager shareManager] loadMediaWithUrl:_url progress:^(NSInteger receivedSize, NSInteger expectedSize) {
+    [[ShortMediaManager shareManager] loadMediaWithUrl:_url options:_options progress:^(NSInteger receivedSize, NSInteger expectedSize) {
         __strong typeof(_self) self = _self;
         if(!self) return;
+        self.receivedSize = receivedSize;
         self.expectedSize = expectedSize;
         [self dealPendingRequests];
     } completion:^(NSError *error) {
         __strong typeof(_self) self = _self;
         if(!self) return;
+        if(!error) {
+            self.receivedSize = self.expectedSize;
+        }
         [self dealPendingRequests];
     }];
 }
@@ -64,8 +75,8 @@
 #pragma mark - AVAssetResourceLoaderDelegate
 - (BOOL)resourceLoader:(AVAssetResourceLoader *)resourceLoader shouldWaitForLoadingOfRequestedResource:(AVAssetResourceLoadingRequest *)loadingRequest{
     if (resourceLoader && loadingRequest) {
+        loadingRequest.dataRequest.respondedSize = 0;
         [self.pendingRequests addObject:loadingRequest];
-        NSLog(@"ShortMediaResourceLoader recived reqeuet count: %d", [self.pendingRequests count]);
         [self dealPendingRequests];
     }
     return YES;
@@ -80,37 +91,49 @@
 
 #pragma mark - private
 - (void)dealPendingRequests {
-    @autoreleasepool {
-        NSMutableArray *finishedRequests = [NSMutableArray array];
-        [self.pendingRequests enumerateObjectsUsingBlock:^(AVAssetResourceLoadingRequest *loadingRequest, NSUInteger idx, BOOL * _Nonnull stop) {
-            [self fillInContentInformation:loadingRequest.contentInformationRequest];
-            BOOL finish = [self respondWithDataForRequest:loadingRequest];
-            if (finish) {
-                [finishedRequests addObject:loadingRequest];
-                [loadingRequest finishLoading];
-            }
-        }];
-        if (finishedRequests.count) {
-            [self.pendingRequests removeObjectsInArray:finishedRequests];
+    NSMutableArray *finishedRequests = [NSMutableArray array];
+    [self.pendingRequests enumerateObjectsUsingBlock:^(AVAssetResourceLoadingRequest *loadingRequest, NSUInteger idx, BOOL * _Nonnull stop) {
+        [self fillInContentInformation:loadingRequest.contentInformationRequest];
+        BOOL finish = [self respondWithDataForRequest:loadingRequest];
+        if (finish) {
+            [finishedRequests addObject:loadingRequest];
+            [loadingRequest finishLoading];
         }
+    }];
+    if (finishedRequests.count) {
+        [self.pendingRequests removeObjectsInArray:finishedRequests];
     }
 }
 
 - (BOOL)respondWithDataForRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
     AVAssetResourceLoadingDataRequest *dataRequest = loadingRequest.dataRequest;
-    long long startOffset = dataRequest.requestedOffset;
+    NSInteger startOffset = (NSInteger)dataRequest.requestedOffset;
     if (dataRequest.currentOffset != 0) {
-        startOffset = dataRequest.currentOffset;
+        startOffset = (NSInteger)dataRequest.currentOffset;
     }
     startOffset = MAX(0, startOffset);
-    NSData *cacheData = [[ShortMediaManager shareManager] cacheDataFromOffset:startOffset length:dataRequest.requestedLength withUrl:_url];
-    if(cacheData) {
-        [dataRequest respondWithData:cacheData];
+    if(startOffset > _receivedSize) {
+        return NO;
+    }
+    NSInteger canReadsize = _receivedSize - startOffset;
+    canReadsize = MAX(0, canReadsize);
+    NSInteger realReadSize = MIN(dataRequest.requestedLength, canReadsize);
+    NSData *respondData = [NSData data];
+    if(realReadSize > 2) {
+        NSData *cacheData = [[ShortMediaManager shareManager] cacheDataFromOffset:startOffset length:realReadSize withUrl:_url];
+        if(cacheData) {
+            respondData = cacheData;
+        }
+    }
+    dataRequest.respondedSize += realReadSize;
+    [dataRequest respondWithData:respondData];
+    if(dataRequest.respondedSize >= dataRequest.requestedLength) {
         return YES;
     } else {
         return NO;
     }
 }
+
 
 - (void)fillInContentInformation:(AVAssetResourceLoadingContentInformationRequest * _Nonnull)contentInformationRequest{
     if (contentInformationRequest && !contentInformationRequest.contentType && _expectedSize > 0) {

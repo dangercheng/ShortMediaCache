@@ -7,6 +7,7 @@
 //
 
 #import "ShortMediaDownloadOperation.h"
+#import <UIKit/UIKit.h>
 
 @interface ShortMediaDownloadOperation()
 @property (readwrite, getter=isExecuting) BOOL executing;
@@ -34,12 +35,14 @@
 
 - (instancetype)initWithRequest:(NSURLRequest *)request
                         session:(NSURLSession *)session
+                        options:(ShortMediaOptions)options
                        progress:(ShortMediaProgressBlock)progress
                      completion:(ShortMediaCompletionBlock)completion {
     self = [super init];
     if (!self) return nil;
     _request = request;
     _session = session;
+    _options = options;
     _progress = progress;
     _completion = completion;
     _executing = NO;
@@ -54,10 +57,45 @@
 }
 
 #pragma mark - NSURLSessionTaskDelegate
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler {
+    
+    NSURLSessionAuthChallengeDisposition disposition = NSURLSessionAuthChallengePerformDefaultHandling;
+    __block NSURLCredential *credential = nil;
+    
+    if ([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
+        if (!(_options & ShortMediaOptionsOptionAllowInvalidSSLCertificates)) {
+            disposition = NSURLSessionAuthChallengePerformDefaultHandling;
+        } else {
+            credential = [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust];
+            disposition = NSURLSessionAuthChallengeUseCredential;
+        }
+    } else {
+        if ([challenge previousFailureCount] == 0) {
+            if (_credential) {
+                credential = _credential;
+                disposition = NSURLSessionAuthChallengeUseCredential;
+            } else {
+                disposition = NSURLSessionAuthChallengeCancelAuthenticationChallenge;
+            }
+        } else {
+            disposition = NSURLSessionAuthChallengeCancelAuthenticationChallenge;
+        }
+    }
+    
+    if (completionHandler) {
+        completionHandler(disposition, credential);
+    }
+}
+
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
-    [[ShortMediaCache shareCache] cacheCompletedWithUrl:_request.URL];
+    if(!error) {
+        [[ShortMediaCache shareCache] cacheCompletedWithUrl:_request.URL];
+        NSLog(@"ShortMediaDownloadOperation donwload complete: %@", _request.URL.absoluteString);
+    } else {
+        NSLog(@"ShortMediaDownloadOperation donwload error: %@", _request.URL.absoluteString);
+    }
     if (_completion) _completion(error);
-    NSLog(@"ShortMediaDownloadOperation donwload complete: %@", _request.URL.absoluteString);
+    
     [self finish];
 }
 
@@ -67,13 +105,21 @@ didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
     if (![response respondsToSelector:@selector(statusCode)] || ([((NSHTTPURLResponse *)response) statusCode] < 400 && [((NSHTTPURLResponse *)response) statusCode] != 304)) {
         NSInteger expected = response.expectedContentLength > 0 ? (NSInteger)response.expectedContentLength : 0;
-        self.expectedSize = expected;
+        NSString *rangeHead = [_request valueForHTTPHeaderField:@"range"];
+        NSInteger startOffset = 0;
+        if(rangeHead && rangeHead.length >= 7) {
+            NSString *startOffsetStr = [rangeHead substringWithRange:NSMakeRange(6, rangeHead.length - 7)];
+            startOffset = [startOffsetStr integerValue];
+        }
+        _expectedSize = startOffset + expected;
+        _receivedSize = startOffset;
+        
         [[ShortMediaCache shareCache] createCacheFileWithUrl:_request.URL];
+        if(_progress) _progress(startOffset, _expectedSize);
     }
     else {
         NSUInteger code = [((NSHTTPURLResponse *)response) statusCode];
         NSError *error = [NSError errorWithDomain:NSURLErrorDomain code:code userInfo:nil];
-        [self cancelOperation];
         if(_completion) _completion(error);
         [self finish];
     }
@@ -86,7 +132,9 @@ didReceiveResponse:(NSURLResponse *)response
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data {
     [[ShortMediaCache shareCache] appendWithData:data url:_request.URL];
+    [_lock lock];
     _receivedSize += data.length;
+    [_lock unlock];
     if(_progress) _progress(_receivedSize, _expectedSize);
     
 //    NSLog(@"ShortMediaDownloadOperation data: _receivedSize=%ld, _expectedSize=%ld",_receivedSize, _expectedSize);
@@ -98,6 +146,8 @@ didReceiveResponse:(NSURLResponse *)response
     self.started = YES;
     if([self isCancelled]) {
         [self cancelOperation];
+        NSError *cancelError = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil];
+        if(_completion) _completion(cancelError);
     } else if([self isReady] && ![self isFinished] && ![self isExecuting]) {
         if(!_request) {
             NSError *error = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorFileDoesNotExist userInfo:nil];
@@ -107,7 +157,6 @@ didReceiveResponse:(NSURLResponse *)response
             self.executing = YES;
             _dataTask = [_session dataTaskWithRequest:_request];
             [_dataTask resume];
-            NSLog(@"ShortMediaDownloadOperation start donwload: %@", _request.URL.absoluteString);
         }
     }
     [_lock unlock];
@@ -133,8 +182,6 @@ didReceiveResponse:(NSURLResponse *)response
     if(_dataTask) {
         [_dataTask cancel];
         _dataTask = nil;
-        NSError *cancelError = [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorCancelled userInfo:nil];
-        if(_completion) _completion(cancelError);
         [self finish];
     }
 }
@@ -163,7 +210,7 @@ didReceiveResponse:(NSURLResponse *)response
 
 - (void)setFinished:(BOOL)finished {
     [_lock lock];
-    if(!_finished != finished) {
+    if(_finished != finished) {
         [self willChangeValueForKey:@"isFinished"];
         _finished = finished;
         [self didChangeValueForKey:@"isFinished"];
@@ -180,7 +227,7 @@ didReceiveResponse:(NSURLResponse *)response
 
 - (void)setCancelled:(BOOL)cancelled {
     [_lock lock];
-    if(!_cancelled != cancelled) {
+    if(_cancelled != cancelled) {
         [self willChangeValueForKey:@"isCancelled"];
         _cancelled = cancelled;
         [self didChangeValueForKey:@"isCancelled"];

@@ -8,15 +8,20 @@
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
+#import "ShortMediaManager.h"
 
 @protocol ShortMediaResourceLoaderDelegate <NSObject>
 @end
 
 @interface ShortMediaResourceLoader : NSObject
 
+- (instancetype)initWithDelegate:(id<ShortMediaResourceLoaderDelegate>)delegate;
+
 @property (nonatomic, weak) id<ShortMediaResourceLoaderDelegate> delegate;
 
 - (AVPlayerItem *)playItemWithUrl:(NSURL *)url;
+
+- (AVPlayerItem *)playItemWithUrl:(NSURL *)url options:(ShortMediaOptions)options;
 
 - (void)endLoading;
 

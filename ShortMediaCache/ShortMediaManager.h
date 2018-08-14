@@ -16,6 +16,7 @@
 + (instancetype)shareManager;
 
 - (void)loadMediaWithUrl:(NSURL *)url
+                 options:(ShortMediaOptions)options
                 progress:(ShortMediaProgressBlock)progress
               completion:(ShortMediaCompletionBlock)completion;
 

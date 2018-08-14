@@ -36,6 +36,7 @@
     _playerItem = [_resourceLoader playItemWithUrl:videoUrl];
     
     _player = [AVPlayer playerWithPlayerItem:_playerItem];
+    
     _playerLayer = [AVPlayerLayer playerLayerWithPlayer:_player];
     _playerLayer.frame = _playerView.bounds;
     [self.playerView.layer addSublayer:_playerLayer];
@@ -56,15 +57,17 @@
 }
 
 - (void)stopPlay {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     if(_player) {
         [_player pause];
         [_resourceLoader endLoading];
+        AVURLAsset *asset = (AVURLAsset *)_playerItem.asset;
+        [asset.resourceLoader setDelegate:nil queue:dispatch_get_main_queue()];
         [_playerLayer removeFromSuperlayer];
-        _playerItem = nil;
         _resourceLoader = nil;
-        _playerLayer = nil;
+        _playerItem = nil;
         _player = nil;
-        [[NSNotificationCenter defaultCenter] removeObserver:self];
+        _playerLayer = nil;
     }
 }
 

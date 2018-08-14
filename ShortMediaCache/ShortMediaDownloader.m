@@ -43,6 +43,7 @@
 }
 
 - (void)downloadMediaWithUrl:(NSURL *)url
+                     options:(ShortMediaOptions)options
                     progress:(ShortMediaProgressBlock)progress
                   completion:(ShortMediaCompletionBlock)completion {
     BOOL cached = [[ShortMediaCache shareCache] isCacheCompletedWithUrl:url];
@@ -58,8 +59,11 @@
     NSMutableURLRequest *downloadRequest = [NSMutableURLRequest requestWithURL:url];
     NSString *range = [NSString stringWithFormat:@"bytes=%zd-", cachedSize];
     [downloadRequest setValue:range forHTTPHeaderField:@"Range"];
+    downloadRequest.HTTPShouldHandleCookies = (options & ShortMediaOptionsHandleCookies);
+    downloadRequest.HTTPShouldUsePipelining = YES;
+    
     __weak typeof(self) _self = self;
-    ShortMediaDownloadOperation *downloadOperation = [[ShortMediaDownloadOperation alloc] initWithRequest:downloadRequest session:_session progress:progress completion:^(NSError *error) {
+    ShortMediaDownloadOperation *downloadOperation = [[ShortMediaDownloadOperation alloc] initWithRequest:downloadRequest session:_session options:options progress:progress completion:^(NSError *error) {
         __strong typeof(_self) self = _self;
         if(!self) return;
         Lock();
@@ -67,6 +71,9 @@
         UnLock();
         if(completion) completion(error);
     }];
+    if(_userName && _password) {
+        downloadOperation.credential = [NSURLCredential credentialWithUser:_userName password:_password persistence:NSURLCredentialPersistenceForSession];
+    }
     Lock();
     [_operationCache setObject:downloadOperation forKey:url];
     [_queue addOperation:downloadOperation];
@@ -89,7 +96,9 @@
 #pragma mark NSURLSessionTaskDelegate
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
+    Lock();
     ShortMediaDownloadOperation *operation = [_operationCache objectForKey:task.originalRequest.URL];
+    UnLock();
     [operation URLSession:session task:task didCompleteWithError:error];
 }
 
@@ -102,13 +111,17 @@
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
 didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
+    Lock();
     ShortMediaDownloadOperation *operation = [_operationCache objectForKey:dataTask.originalRequest.URL];
+    UnLock();
     [operation URLSession:session dataTask:dataTask didReceiveResponse:response completionHandler:completionHandler];
 }
 
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data {
+    Lock();
     ShortMediaDownloadOperation *operation = [_operationCache objectForKey:dataTask.originalRequest.URL];
+    UnLock();
     [operation URLSession:session dataTask:dataTask didReceiveData:data];
 }
 

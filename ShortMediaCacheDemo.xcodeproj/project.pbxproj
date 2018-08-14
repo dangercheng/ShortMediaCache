@@ -10,6 +10,7 @@
 		5382708F2119870D0049A100 /* ShortMediaWeakProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = 5382708E2119870C0049A100 /* ShortMediaWeakProxy.m */; };
 		5382709221199A8D0049A100 /* ShortMediaDownloader.m in Sources */ = {isa = PBXBuildFile; fileRef = 5382709121199A8D0049A100 /* ShortMediaDownloader.m */; };
 		53827095211BE1AD0049A100 /* PlayerCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 53827094211BE1AD0049A100 /* PlayerCell.m */; };
+		53827098211C673F0049A100 /* AVAssetResourceLoadingDataRequest+ShortMediaCache.m in Sources */ = {isa = PBXBuildFile; fileRef = 53827097211C673F0049A100 /* AVAssetResourceLoadingDataRequest+ShortMediaCache.m */; };
 		53BF338E210F0A4B00DB23DD /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 53BF338D210F0A4B00DB23DD /* AppDelegate.m */; };
 		53BF3391210F0A4C00DB23DD /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 53BF3390210F0A4C00DB23DD /* ViewController.m */; };
 		53BF3394210F0A4C00DB23DD /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 53BF3392210F0A4C00DB23DD /* Main.storyboard */; };
@@ -30,6 +31,8 @@
 		5382709121199A8D0049A100 /* ShortMediaDownloader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ShortMediaDownloader.m; sourceTree = "<group>"; };
 		53827093211BE1AD0049A100 /* PlayerCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PlayerCell.h; sourceTree = "<group>"; };
 		53827094211BE1AD0049A100 /* PlayerCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PlayerCell.m; sourceTree = "<group>"; };
+		53827096211C673F0049A100 /* AVAssetResourceLoadingDataRequest+ShortMediaCache.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "AVAssetResourceLoadingDataRequest+ShortMediaCache.h"; sourceTree = "<group>"; };
+		53827097211C673F0049A100 /* AVAssetResourceLoadingDataRequest+ShortMediaCache.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "AVAssetResourceLoadingDataRequest+ShortMediaCache.m"; sourceTree = "<group>"; };
 		53BF3389210F0A4B00DB23DD /* ShortMediaCacheDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShortMediaCacheDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		53BF338C210F0A4B00DB23DD /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		53BF338D210F0A4B00DB23DD /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -115,6 +118,8 @@
 				53BF33A7210F1A4C00DB23DD /* ShortMediaDownloadOperation.m */,
 				5382708D2119870C0049A100 /* ShortMediaWeakProxy.h */,
 				5382708E2119870C0049A100 /* ShortMediaWeakProxy.m */,
+				53827096211C673F0049A100 /* AVAssetResourceLoadingDataRequest+ShortMediaCache.h */,
+				53827097211C673F0049A100 /* AVAssetResourceLoadingDataRequest+ShortMediaCache.m */,
 			);
 			path = ShortMediaCache;
 			sourceTree = "<group>";
@@ -198,6 +203,7 @@
 				53BF33A8210F1A4C00DB23DD /* ShortMediaDownloadOperation.m in Sources */,
 				53BF339C210F0A4D00DB23DD /* main.m in Sources */,
 				53BF338E210F0A4B00DB23DD /* AppDelegate.m in Sources */,
+				53827098211C673F0049A100 /* AVAssetResourceLoadingDataRequest+ShortMediaCache.m in Sources */,
 				53BF33B12110024B00DB23DD /* ShortMediaDiskCache.m in Sources */,
 				5382708F2119870D0049A100 /* ShortMediaWeakProxy.m in Sources */,
 			);

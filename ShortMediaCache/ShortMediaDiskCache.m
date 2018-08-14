@@ -40,6 +40,7 @@ static NSString *const kMediaTrashDirectoryName = @"trash";
     
     NSLog(@"ShortMediaCache tempPath:%@", _tempPath);
     NSLog(@"ShortMediaCache finalPath:%@", _finalPath);
+    NSLog(@"ShortMediaCache trashPath:%@",_trashPath);
     return self;
 }
 
@@ -112,13 +113,9 @@ static NSString *const kMediaTrashDirectoryName = @"trash";
     
     NSError *error;
     NSData *tempVideoData = [NSData dataWithContentsOfFile:targetPath options:NSDataReadingMappedIfSafe error:&error];
-    if (!error) {
-        if(tempVideoData.length >= (offset + length)) {
-            NSRange respondRange = NSMakeRange(offset, length);
-            return [tempVideoData subdataWithRange:respondRange];
-        } else {
-            return nil;
-        }
+    if (!error && !(tempVideoData.length < (offset + length))) {
+        NSRange respondRange = NSMakeRange(offset, length);
+        return [tempVideoData subdataWithRange:respondRange];
     } else {
         return nil;
     }

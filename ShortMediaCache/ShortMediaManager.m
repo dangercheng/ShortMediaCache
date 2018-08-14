@@ -19,9 +19,10 @@
 }
 
 - (void)loadMediaWithUrl:(NSURL *)url
+                 options:(ShortMediaOptions)options
                 progress:(ShortMediaProgressBlock)progress
               completion:(ShortMediaCompletionBlock)completion {
-    [[ShortMediaDownloader shareDownloader] downloadMediaWithUrl:url progress:^(NSInteger receivedSize, NSInteger expectedSize) {
+    [[ShortMediaDownloader shareDownloader] downloadMediaWithUrl:url options:options progress:^(NSInteger receivedSize, NSInteger expectedSize) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if(progress) progress(receivedSize, expectedSize);
         });
