@@ -7,6 +7,15 @@
 //
 
 #import "ShortMediaManager.h"
+#import <UIKit/UIKit.h>
+
+#define Lock() dispatch_semaphore_wait(self.lock, DISPATCH_TIME_FOREVER)
+#define UnLock() dispatch_semaphore_signal(self.lock)
+
+@interface ShortMediaManager()
+@property (nonatomic, strong)  NSMutableArray *waitingPreloadingUrls;
+@property (nonatomic, strong) dispatch_semaphore_t lock;
+@end
 
 @implementation ShortMediaManager
 + (instancetype)shareManager {
@@ -18,6 +27,22 @@
     return manager;
 }
 
+- (instancetype)init {
+    self = [super init];
+    if(!self) return nil;
+    _lock = dispatch_semaphore_create(1);
+    _cacheConfig = [ShortMediaCacheConfig defaultConfig];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(resetCache)
+                                                 name:UIApplicationWillTerminateNotification
+                                               object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(resetCacheInbackgroud)
+                                                 name:UIApplicationDidEnterBackgroundNotification
+                                               object:nil];
+    return self;
+}
+
 - (void)loadMediaWithUrl:(NSURL *)url
                  options:(ShortMediaOptions)options
                 progress:(ShortMediaProgressBlock)progress
@@ -27,6 +52,7 @@
             if(progress) progress(receivedSize, expectedSize);
         });
     } completion:^(NSError *error) {
+         [self startPreloading];
         dispatch_async(dispatch_get_main_queue(), ^{
             if(completion) completion(error);
         });
@@ -41,6 +67,85 @@
                          length:(NSUInteger)length
                         withUrl:(NSURL *)url {
     return [[ShortMediaCache shareCache] cacheDataFromOffset:offset length:length withUrl:url];
+}
+
+- (void)resetCache {
+    [[ShortMediaCache shareCache] resetCacheWithConfig:_cacheConfig completion:nil];
+}
+
+- (void)resetCacheInbackgroud {
+    Class UIApplicationClass = NSClassFromString(@"UIApplication");
+    if(!UIApplicationClass || ![UIApplicationClass respondsToSelector:@selector(sharedApplication)]) {
+        return;
+    }
+    UIApplication *application = [UIApplication performSelector:@selector(sharedApplication)];
+    __block UIBackgroundTaskIdentifier backgroundTask = [application beginBackgroundTaskWithExpirationHandler:^{
+        [application endBackgroundTask:backgroundTask];
+        backgroundTask = UIBackgroundTaskInvalid;
+    }];
+
+    [[ShortMediaCache shareCache] resetFinalCacheWithConfig:_cacheConfig completion:^{
+        [application endBackgroundTask:backgroundTask];
+        backgroundTask = UIBackgroundTaskInvalid;
+    }];
+}
+
+- (NSInteger)totalCachedSize {
+    return [[ShortMediaCache shareCache] totalCachedSize];
+}
+
+- (NSString *)totalCachedSizeStr {
+    NSInteger size = [self totalCachedSize];
+    if (size <= 0) {
+        return @"0.00M";
+    }
+    if (size < 1023 && size > 0)
+        return([NSString stringWithFormat:@"%ibytes",size]);
+    CGFloat floatSize = size / 1024.0;
+    if (floatSize < 1023) return ([NSString stringWithFormat:@"%.2fKB", floatSize]);
+    floatSize = floatSize / 1024.0;
+    if (floatSize < 1023) return ([NSString stringWithFormat:@"%.2fMB", floatSize]);
+    floatSize = floatSize / 1024.0;
+    
+    return ([NSString stringWithFormat:@"%.2fGB", floatSize]);
+}
+
+- (void)cleanCache {
+    [[ShortMediaCache shareCache] cleanCache];
+}
+
+- (void)resetPreloadingWithMediaUrls:(NSArray *)mediaUrls {
+    for (NSURL *url in mediaUrls) {
+        [[ShortMediaDownloader shareDownloader] cancelDownloadWithUrl:url];
+    }
+    Lock();
+    _prloadingMediaUrls = mediaUrls;
+    _waitingPreloadingUrls = [NSMutableArray arrayWithArray:mediaUrls];
+    UnLock();
+}
+
+- (void)startPreloading {
+    Lock();
+    BOOL canPreload = YES;
+    if(!([_waitingPreloadingUrls count] > 0)) {
+        canPreload = NO;
+    }
+    else if(![ShortMediaDownloader shareDownloader].canPreload) {
+        canPreload = NO;
+    }
+    if(canPreload) {
+        NSURL *url = _waitingPreloadingUrls.firstObject;
+        UnLock();
+        [[ShortMediaDownloader shareDownloader] preloadMediaWithUrl:url options:kNilOptions progress:nil completion:^(NSError *error) {
+            Lock();
+            [self.waitingPreloadingUrls removeObject:url];
+            UnLock();
+            [self startPreloading];
+        }];
+    }
+    else {
+        UnLock();
+    }
 }
 
 @end

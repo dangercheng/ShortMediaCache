@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		53140E26212570EF0086B96A /* ShortMediaCacheConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = 53140E25212570EF0086B96A /* ShortMediaCacheConfig.m */; };
 		5382708F2119870D0049A100 /* ShortMediaWeakProxy.m in Sources */ = {isa = PBXBuildFile; fileRef = 5382708E2119870C0049A100 /* ShortMediaWeakProxy.m */; };
 		5382709221199A8D0049A100 /* ShortMediaDownloader.m in Sources */ = {isa = PBXBuildFile; fileRef = 5382709121199A8D0049A100 /* ShortMediaDownloader.m */; };
 		53827095211BE1AD0049A100 /* PlayerCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 53827094211BE1AD0049A100 /* PlayerCell.m */; };
@@ -25,6 +26,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		53140E24212570EF0086B96A /* ShortMediaCacheConfig.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShortMediaCacheConfig.h; sourceTree = "<group>"; };
+		53140E25212570EF0086B96A /* ShortMediaCacheConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ShortMediaCacheConfig.m; sourceTree = "<group>"; };
 		5382708D2119870C0049A100 /* ShortMediaWeakProxy.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShortMediaWeakProxy.h; sourceTree = "<group>"; };
 		5382708E2119870C0049A100 /* ShortMediaWeakProxy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ShortMediaWeakProxy.m; sourceTree = "<group>"; };
 		5382709021199A8D0049A100 /* ShortMediaDownloader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShortMediaDownloader.h; sourceTree = "<group>"; };
@@ -120,6 +123,8 @@
 				5382708E2119870C0049A100 /* ShortMediaWeakProxy.m */,
 				53827096211C673F0049A100 /* AVAssetResourceLoadingDataRequest+ShortMediaCache.h */,
 				53827097211C673F0049A100 /* AVAssetResourceLoadingDataRequest+ShortMediaCache.m */,
+				53140E24212570EF0086B96A /* ShortMediaCacheConfig.h */,
+				53140E25212570EF0086B96A /* ShortMediaCacheConfig.m */,
 			);
 			path = ShortMediaCache;
 			sourceTree = "<group>";
@@ -198,6 +203,7 @@
 				53BF33AB210F1E0600DB23DD /* ShortMediaCache.m in Sources */,
 				53BF33A5210F0FD200DB23DD /* ShortMediaResourceLoader.m in Sources */,
 				5382709221199A8D0049A100 /* ShortMediaDownloader.m in Sources */,
+				53140E26212570EF0086B96A /* ShortMediaCacheConfig.m in Sources */,
 				53BF33AE210FF77A00DB23DD /* ShortMediaManager.m in Sources */,
 				53BF3391210F0A4C00DB23DD /* ViewController.m in Sources */,
 				53BF33A8210F1A4C00DB23DD /* ShortMediaDownloadOperation.m in Sources */,

@@ -57,6 +57,7 @@
     __weak typeof(self) _self = self;
     dispatch_async(_fileQueue, ^{
         __strong typeof(_self) self = _self;
+        if(!self) return;
         Lock();
         NSString *fileName = [self fileNameWithUrl:url];
         [self.diskCache appendData:data tempFileWithName:fileName];
@@ -79,6 +80,7 @@
     __weak typeof(self) _self = self;
     dispatch_sync(_fileQueue, ^{
         __strong typeof(_self) self = _self;
+        if(!self) return;
         Lock();
         [self.diskCache moveTempFileToFinalWithName:fileName];
         UnLock();
@@ -107,6 +109,58 @@
     NSInteger size = [_diskCache finalCachedSizeWithName:fileName];
     UnLock();
     return size;
+}
+
+- (NSInteger)totalCachedSize {
+    Lock();
+    NSInteger size = [_diskCache totalCachedSize];
+    UnLock();
+    return size;
+}
+
+- (void)cleanCache {
+    Lock();
+    [_diskCache moveAllCacheToTrash];
+    UnLock();
+    __weak typeof(self) _self = self;
+    dispatch_async(_fileQueue, ^{
+        __strong typeof(_self) self = _self;
+        if(!self) return;
+        Lock();
+        [self.diskCache cleanTrash];
+        UnLock();
+    });
+}
+
+- (void)sesetCacheWithConfig:(ShortMediaCacheConfig *)cacheConfig completion:(CompletionBlock)completion {
+   __weak typeof(self) _self = self;
+    dispatch_async(_fileQueue, ^{
+        __strong typeof(_self) self = _self;
+        if(!self) return;
+        Lock();
+        [self.diskCache resetCacheWithConfig:cacheConfig];
+        UnLock();
+        
+        if(completion) {
+            completion();
+        }
+    });
+}
+
+- (void)resetFinalCacheWithConfig:(ShortMediaCacheConfig *)cacheConfig completion:(CompletionBlock)completion {
+    __weak typeof(self) _self = self;
+    dispatch_async(_fileQueue, ^{
+        __strong typeof(_self) self = _self;
+        if(!self) return;
+        
+        Lock();
+        [self.diskCache resetFinalCacheWitchConfig:cacheConfig];
+        UnLock();
+        
+        if(completion) {
+            completion();
+        }
+    });
 }
 
 

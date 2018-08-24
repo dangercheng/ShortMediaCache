@@ -7,6 +7,7 @@
 //
 
 #import "ShortMediaDiskCache.h"
+#import "ShortMediaCacheConfig.h"
 
 static NSString *const kMediaFinalDirectoryName = @"media";
 static NSString *const kMediaTempDirectoryName = @"temp";
@@ -143,7 +144,7 @@ static NSString *const kMediaTrashDirectoryName = @"trash";
     NSInteger fileSize = 0;
     NSDictionary *fileDict = [fileManager attributesOfItemAtPath:filePath error:&error];
     if (!error && fileDict) {
-        fileSize = [fileDict fileSize];
+        fileSize = (NSInteger)[fileDict fileSize];
     }
     
     return fileSize;
@@ -156,6 +157,131 @@ static NSString *const kMediaTrashDirectoryName = @"trash";
     NSFileManager *fileManager = [[NSFileManager alloc] init];
     NSString *filePath = [_finalPath stringByAppendingPathComponent:fileName];
     return [fileManager fileExistsAtPath:filePath];
+}
+
+- (NSInteger)totalCachedSize {
+    NSFileManager *fileManager = [[NSFileManager alloc] init];
+    NSDirectoryEnumerator *fileEnumerator = [fileManager enumeratorAtPath:_tempPath];
+    NSInteger totalFileSize = 0;
+    for (NSString *fileName in fileEnumerator) {
+        NSString *filePath = [_tempPath stringByAppendingPathComponent:fileName];
+        NSInteger fileSize = [self fileSizeWithPath:filePath];
+        totalFileSize += fileSize;
+    }
+    fileEnumerator = [fileManager enumeratorAtPath:_finalPath];
+    for (NSString *fileName in fileEnumerator) {
+        NSString *filePath = [_finalPath stringByAppendingPathComponent:fileName];
+        NSInteger fileSize = [self fileSizeWithPath:filePath];
+        totalFileSize += fileSize;
+    }
+    return totalFileSize;
+}
+
+- (void)moveAllCacheToTrash {
+    NSFileManager *fileManager = [[NSFileManager alloc] init];
+    NSDirectoryEnumerator *fileEnumerator_temp = [fileManager enumeratorAtPath:_tempPath];
+    for (NSString *fileName in fileEnumerator_temp) {
+        NSError *error;
+        NSString *filePath = [_tempPath stringByAppendingPathComponent:fileName];
+        NSString *toPath = [_trashPath stringByAppendingPathComponent:fileName];
+        [fileManager moveItemAtPath:filePath toPath:toPath error:&error];
+        if(!error) {
+            CFDictionaryRemoveValue(_fileHandleCache, (__bridge const void *)(fileName));
+        }
+    }
+    
+    NSDirectoryEnumerator *fileEnumerator_full = [fileManager enumeratorAtPath:_finalPath];
+    for (NSString *fileName in fileEnumerator_full) {
+        NSError *error;
+        NSString *filePath = [_finalPath stringByAppendingPathComponent:fileName];
+        NSString *toPath = [_trashPath stringByAppendingPathComponent:fileName];
+        [fileManager moveItemAtPath:filePath toPath:toPath error:nil];
+        if(!error) {
+            CFDictionaryRemoveValue(_fileHandleCache, (__bridge const void *)(fileName));
+        }
+    }
+}
+
+- (void)cleanTrash {
+    NSFileManager *fileManager = [[NSFileManager alloc] init];
+    [fileManager removeItemAtPath:_trashPath error:nil];
+    [fileManager createDirectoryAtPath:_trashPath withIntermediateDirectories:YES attributes:nil error:nil];
+}
+
+- (void)resetCacheWithConfig:(ShortMediaCacheConfig *)config {
+    [self resetTempCacheWitchConfig:config];
+    [self resetFinalCacheWitchConfig:config];
+}
+
+- (void)resetTempCacheWitchConfig:(ShortMediaCacheConfig *)config {
+    [self resetCacheWithPath:_tempPath maxTimeInterval:config.maxTempCacheTimeInterval maxSize:config.maxTempCacheSize];
+}
+
+- (void)resetFinalCacheWitchConfig:(ShortMediaCacheConfig *)config {
+    [self resetCacheWithPath:_finalPath maxTimeInterval:config.maxFinalCacheTimeInterval maxSize:config.maxFinalCacheSize];
+}
+
+- (void)resetCacheWithPath:(NSString *)path
+           maxTimeInterval:(NSInteger)timeInterval
+                    maxSize:(NSInteger)maxSize {
+    NSFileManager *fileManager = [[NSFileManager alloc] init];
+    NSURL *cacheUrl = [NSURL fileURLWithPath:path isDirectory:YES];
+    NSArray<NSString *> *resourceKeys = @[NSURLIsDirectoryKey, NSURLContentModificationDateKey, NSURLTotalFileAllocatedSizeKey];
+    NSDirectoryEnumerator *fileEnumerator = [fileManager enumeratorAtURL:cacheUrl
+                                              includingPropertiesForKeys:resourceKeys
+                                                                 options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                            errorHandler:NULL];
+    
+    NSDate *expirationDate = [NSDate dateWithTimeIntervalSinceNow:-timeInterval];
+    NSMutableDictionary<NSURL *, NSDictionary<NSString *, id> *> *remainningFiles = [NSMutableDictionary dictionary];
+    NSUInteger remainingSize = 0;
+    
+    NSMutableArray<NSURL *> *urlsToDelete = [[NSMutableArray alloc] init];
+    
+    for (NSURL *fileURL in fileEnumerator) {
+        @autoreleasepool {
+            NSError *error;
+            NSDictionary<NSString *, id> *resourceValues = [fileURL resourceValuesForKeys:resourceKeys error:&error];
+            if (error || !resourceValues || [resourceValues[NSURLIsDirectoryKey] boolValue]) {
+                continue;
+            }
+            NSDate *modificationDate = resourceValues[NSURLContentModificationDateKey];
+            if ([[modificationDate laterDate:expirationDate] isEqualToDate:expirationDate]) {
+                [urlsToDelete addObject:fileURL];
+                continue;
+            }
+            NSNumber *totalAllocatedSize = resourceValues[NSURLTotalFileAllocatedSizeKey];
+            remainingSize += totalAllocatedSize.unsignedIntegerValue;
+            remainningFiles[fileURL] = resourceValues;
+        }
+    }
+    
+    for (NSURL *fileURL in urlsToDelete) {
+        NSString *trashPath = [_trashPath stringByAppendingPathComponent:fileURL.lastPathComponent];
+        [fileManager moveItemAtPath:fileURL.absoluteString toPath:trashPath error:nil];
+    }
+    
+    if (maxSize > 0 && remainingSize > maxSize) {
+        const NSUInteger targteCacheSize = maxSize / 2;
+        NSArray<NSURL *> *sortedFiles = [remainningFiles keysSortedByValueWithOptions:NSSortConcurrent
+                                                                 usingComparator:^NSComparisonResult(id obj1, id obj2) {
+                                                                     return [obj1[NSURLContentModificationDateKey] compare:obj2[NSURLContentModificationDateKey]];
+                                                                 }];
+        
+        for (NSURL *fileURL in sortedFiles) {
+            NSString *trashPath = [_trashPath stringByAppendingPathComponent:fileURL.lastPathComponent];
+            if([fileManager moveItemAtPath:fileURL.absoluteString toPath:trashPath error:nil]) {
+                NSDictionary<NSString *, id> *resourceValues = remainningFiles[fileURL];
+                NSNumber *totalAllocatedSize = resourceValues[NSURLTotalFileAllocatedSizeKey];
+                remainingSize -= totalAllocatedSize.unsignedIntegerValue;
+                
+                if (remainingSize < targteCacheSize) {
+                    break;
+                }
+            }
+        }
+    }
+    [self cleanTrash];
 }
 
 @end

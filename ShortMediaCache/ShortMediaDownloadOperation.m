@@ -136,8 +136,6 @@ didReceiveResponse:(NSURLResponse *)response
     _receivedSize += data.length;
     [_lock unlock];
     if(_progress) _progress(_receivedSize, _expectedSize);
-    
-//    NSLog(@"ShortMediaDownloadOperation data: _receivedSize=%ld, _expectedSize=%ld",_receivedSize, _expectedSize);
 }
 
 #pragma mark - Methods

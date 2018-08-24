@@ -9,6 +9,10 @@
 #import <Foundation/Foundation.h>
 #import "ShortMediaDiskCache.h"
 
+@class ShortMediaCacheConfig;
+
+typedef void(^CompletionBlock)(void);
+
 @interface ShortMediaCache : NSObject
 
 @property (nonatomic, strong) ShortMediaDiskCache *diskCache;
@@ -30,5 +34,13 @@
 - (NSInteger)cachedSizeWithUrl:(NSURL *)url;
 
 - (NSInteger)finalCachedSizeWithUrl:(NSURL *)url;
+
+- (NSInteger)totalCachedSize;
+
+- (void)cleanCache;
+
+- (void)resetCacheWithConfig:(ShortMediaCacheConfig *)cacheConfig completion:(CompletionBlock)completion;
+
+- (void)resetFinalCacheWithConfig:(ShortMediaCacheConfig *)cacheConfig completion:(CompletionBlock)completion;
 
 @end

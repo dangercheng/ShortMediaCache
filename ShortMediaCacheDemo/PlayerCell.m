@@ -30,8 +30,6 @@
     if(_player) {
         return;
     }
-    //    AVAsset *asset = [AVAsset assetWithURL:videoUrl];
-    //    _playerItem = [AVPlayerItem playerItemWithAsset:asset];
     _resourceLoader = [ShortMediaResourceLoader new];
     _playerItem = [_resourceLoader playItemWithUrl:videoUrl];
     
@@ -46,7 +44,7 @@
 }
 
 -(void)playbackFinished:(NSNotification *)notification{
-    NSLog(@"视频播放完成.");
+    NSLog(@"Complete.");
     [_player seekToTime:CMTimeMake(0, 1)];
     [_player play];
 }

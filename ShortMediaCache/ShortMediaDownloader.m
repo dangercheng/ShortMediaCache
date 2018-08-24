@@ -57,7 +57,7 @@
     [self cancelDownloadWithUrl:url];
     NSInteger cachedSize = [[ShortMediaCache shareCache] cachedSizeWithUrl:url];
     NSMutableURLRequest *downloadRequest = [NSMutableURLRequest requestWithURL:url];
-    NSString *range = [NSString stringWithFormat:@"bytes=%zd-", cachedSize];
+    NSString *range = [NSString stringWithFormat:@"bytes=%d-", cachedSize];
     [downloadRequest setValue:range forHTTPHeaderField:@"Range"];
     downloadRequest.HTTPShouldHandleCookies = (options & ShortMediaOptionsHandleCookies);
     downloadRequest.HTTPShouldUsePipelining = YES;
@@ -80,6 +80,12 @@
     UnLock();
 }
 
+- (void)preloadMediaWithUrl:(NSURL *)url
+                    options:(ShortMediaOptions)options
+                   progress:(ShortMediaProgressBlock)progress
+                 completion:(ShortMediaCompletionBlock)completion {
+}
+
 - (void)cancelDownloadWithUrl:(NSURL *)url {
     if(!url) {
         return;
@@ -93,8 +99,24 @@
     UnLock();
 }
 
-#pragma mark NSURLSessionTaskDelegate
+- (BOOL)canPreload {
+    BOOL retValue = YES;
+    Lock();
+    for (ShortMediaDownloadOperation *operation in self.operationCache.allValues) {
+        if(!operation.isPreloading) {
+            retValue = NO;
+            break;
+        }
+    }
+    UnLock();
+    return retValue;
+}
 
+- (void)dealloc {
+    [_session invalidateAndCancel];
+}
+
+#pragma mark NSURLSessionTaskDelegate
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didCompleteWithError:(NSError *)error {
     Lock();
     ShortMediaDownloadOperation *operation = [_operationCache objectForKey:task.originalRequest.URL];
@@ -103,8 +125,8 @@
 }
 
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler {
-//    ShortMediaDownloadOperation *operation = [_operationCache objectForKey:task.originalRequest.URL];
-//    [operation URLSession:session task:task didReceiveChallenge:challenge completionHandler:completionHandler];
+    ShortMediaDownloadOperation *operation = [_operationCache objectForKey:task.originalRequest.URL];
+    [operation URLSession:session task:task didReceiveChallenge:challenge completionHandler:completionHandler];
 }
 
 #pragma mark - NSURLSessionDataDelegate

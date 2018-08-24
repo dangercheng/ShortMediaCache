@@ -16,6 +16,8 @@
 
 @property (nonatomic, strong) NSURLCredential *credential;
 
+@property (nonatomic, assign) BOOL isPreloading;
+
 - (instancetype)initWithRequest:(NSURLRequest *)request
                         session:(NSURLSession *)session
                         options:(ShortMediaOptions)options

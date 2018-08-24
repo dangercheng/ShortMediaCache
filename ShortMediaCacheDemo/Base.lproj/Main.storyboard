@@ -23,23 +23,23 @@
                         <subviews>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="vtS-mR-gxl">
                                 <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="HJL-pa-tW8">
-                                    <size key="itemSize" width="375" height="647"/>
+                                    <size key="itemSize" width="375" height="284"/>
                                     <size key="headerReferenceSize" width="0.0" height="0.0"/>
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>
                                     <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                 </collectionViewFlowLayout>
                                 <cells>
                                     <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="PlayerCell" id="Bsp-vG-Tsb" customClass="PlayerCell">
-                                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="375" height="284"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO">
-                                            <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="375" height="284"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="k6p-V3-aoe">
-                                                    <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="375" height="284"/>
                                                     <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 </view>
                                             </subviews>
@@ -56,12 +56,21 @@
                                     </collectionViewCell>
                                 </cells>
                             </collectionView>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="BAC-ai-KDW">
+                                <rect key="frame" x="10" y="627" width="87" height="30"/>
+                                <state key="normal" title="Clean Cache"/>
+                                <connections>
+                                    <action selector="clickCleanCacheBtn:" destination="BYZ-38-t0r" eventType="touchUpInside" id="JC0-KM-oKz"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="d3z-iJ-Cda" firstAttribute="top" secondItem="vtS-mR-gxl" secondAttribute="bottom" id="0dt-TO-Rri"/>
                             <constraint firstAttribute="trailing" secondItem="vtS-mR-gxl" secondAttribute="trailing" id="1kJ-fD-bGq"/>
+                            <constraint firstItem="d3z-iJ-Cda" firstAttribute="top" secondItem="BAC-ai-KDW" secondAttribute="bottom" constant="10" id="Etd-yU-2fd"/>
                             <constraint firstItem="vtS-mR-gxl" firstAttribute="top" secondItem="8bC-Xf-vdC" secondAttribute="top" id="KH1-xf-wve"/>
+                            <constraint firstItem="BAC-ai-KDW" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" constant="10" id="KdB-Tj-6qI"/>
                             <constraint firstItem="vtS-mR-gxl" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" id="gF1-IO-xhJ"/>
                         </constraints>
                     </view>

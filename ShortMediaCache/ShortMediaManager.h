@@ -8,10 +8,13 @@
 
 #import <Foundation/Foundation.h>
 #import "ShortMediaDownloader.h"
+#import "ShortMediaCacheConfig.h"
 
 @interface ShortMediaManager : NSObject
 
-@property (nonatomic, strong) ShortMediaCache *cache;
+@property (nonatomic, strong) ShortMediaCacheConfig *cacheConfig;
+
+@property (nonatomic, strong, readonly) NSArray *prloadingMediaUrls;
 
 + (instancetype)shareManager;
 
@@ -25,5 +28,13 @@
 - (NSData *)cacheDataFromOffset:(NSUInteger)offset
                          length:(NSUInteger)length
                         withUrl:(NSURL *)url;
+
+- (NSInteger)totalCachedSize;
+
+- (NSString *)totalCachedSizeStr;
+
+- (void)cleanCache;
+
+- (void)resetPreloadingWithMediaUrls:(NSArray *)mediaUrls;
 
 @end

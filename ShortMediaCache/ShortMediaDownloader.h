@@ -21,6 +21,7 @@ typedef void(^ShortMediaCompletionBlock)(NSError *error);
 
 @property (nonatomic, copy) NSString *userName;
 @property (nonatomic, copy) NSString *password;
+@property (nonatomic, assign, readonly) BOOL canPreload;
 
 + (instancetype)shareDownloader;
 
@@ -28,6 +29,11 @@ typedef void(^ShortMediaCompletionBlock)(NSError *error);
                      options:(ShortMediaOptions)options
                     progress:(ShortMediaProgressBlock)progress
                   completion:(ShortMediaCompletionBlock)completion;
+
+- (void)preloadMediaWithUrl:(NSURL *)url
+                    options:(ShortMediaOptions)options
+                   progress:(ShortMediaProgressBlock)progress
+                 completion:(ShortMediaCompletionBlock)completion;
 
 - (void)cancelDownloadWithUrl:(NSURL *)url;
 
