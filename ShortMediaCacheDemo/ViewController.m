@@ -95,9 +95,30 @@
     PlayerCell *cell = visibleCells.firstObject;
     NSString *videoStr = [_videoUrls objectAtIndex:index];
     dispatch_after(0.5, dispatch_get_main_queue(), ^{
-        [cell playVideoWithUrl:[NSURL URLWithString:videoStr]];
         NSLog(@"2====>scroll to cell %@ index: %ld",cell, (long)index);
+        [cell playVideoWithUrl:[NSURL URLWithString:videoStr]];
+        [self resetPreloadWithIndex:index];
     });
+}
+
+- (void)resetPreloadWithIndex:(NSInteger)index {
+    index ++;
+    if(index >= _videoUrls.count) {
+        return;
+    }
+    NSInteger maxPreloadCount = 3;
+    NSMutableArray *preloadUrls = [NSMutableArray arrayWithCapacity:maxPreloadCount];
+    for(NSInteger i = index; i < _videoUrls.count; i++) {
+        NSString *videoUrlStr = _videoUrls[i];
+        NSURL *videoUrl = [NSURL URLWithString:videoUrlStr];
+        if(videoUrl) {
+            [preloadUrls addObject:videoUrl];
+            if(preloadUrls.count == maxPreloadCount) {
+                break;
+            }
+        }
+    }
+    [[ShortMediaManager shareManager] resetPreloadingWithMediaUrls:preloadUrls];
 }
 
 @end

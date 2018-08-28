@@ -52,7 +52,9 @@
             if(progress) progress(receivedSize, expectedSize);
         });
     } completion:^(NSError *error) {
-         [self startPreloading];
+        if(!error) {
+            [self startPreloading];
+        }
         dispatch_async(dispatch_get_main_queue(), ^{
             if(completion) completion(error);
         });
@@ -100,7 +102,7 @@
         return @"0.00M";
     }
     if (size < 1023 && size > 0)
-        return([NSString stringWithFormat:@"%ibytes",size]);
+        return([NSString stringWithFormat:@"%libytes",(long)size]);
     CGFloat floatSize = size / 1024.0;
     if (floatSize < 1023) return ([NSString stringWithFormat:@"%.2fKB", floatSize]);
     floatSize = floatSize / 1024.0;
@@ -122,25 +124,35 @@
     _prloadingMediaUrls = mediaUrls;
     _waitingPreloadingUrls = [NSMutableArray arrayWithArray:mediaUrls];
     UnLock();
+    [self startPreloading];
 }
 
 - (void)startPreloading {
     Lock();
     BOOL canPreload = YES;
     if(!([_waitingPreloadingUrls count] > 0)) {
+        NSLog(@"No preloading waitting");
         canPreload = NO;
     }
     else if(![ShortMediaDownloader shareDownloader].canPreload) {
+        NSLog(@"Can not start preloading");
         canPreload = NO;
     }
+   
     if(canPreload) {
+        NSLog(@"start preloading");
         NSURL *url = _waitingPreloadingUrls.firstObject;
+        __weak typeof(self) _self = self;
         UnLock();
         [[ShortMediaDownloader shareDownloader] preloadMediaWithUrl:url options:kNilOptions progress:nil completion:^(NSError *error) {
-            Lock();
-            [self.waitingPreloadingUrls removeObject:url];
-            UnLock();
-            [self startPreloading];
+            __strong typeof(_self) self = _self;
+            NSLog(@"End preloading");
+            if(!error) {
+                Lock();
+                [self.waitingPreloadingUrls removeObject:url];
+                UnLock();
+                [self startPreloading];
+            }
         }];
     }
     else {

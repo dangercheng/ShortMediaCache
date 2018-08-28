@@ -46,6 +46,21 @@
                      options:(ShortMediaOptions)options
                     progress:(ShortMediaProgressBlock)progress
                   completion:(ShortMediaCompletionBlock)completion {
+    [self downloadMediaWithUrl:url options:options preload:NO progress:progress completion:completion];
+}
+
+- (void)preloadMediaWithUrl:(NSURL *)url
+                    options:(ShortMediaOptions)options
+                   progress:(ShortMediaProgressBlock)progress
+                 completion:(ShortMediaCompletionBlock)completion {
+    [self downloadMediaWithUrl:url options:options preload:YES progress:progress completion:completion];
+}
+
+- (void)downloadMediaWithUrl:(NSURL *)url
+                     options:(ShortMediaOptions)options
+                     preload:(BOOL)preload
+                    progress:(ShortMediaProgressBlock)progress
+                  completion:(ShortMediaCompletionBlock)completion {
     BOOL cached = [[ShortMediaCache shareCache] isCacheCompletedWithUrl:url];
     if(cached) {
         NSInteger fileSize = [[ShortMediaCache shareCache] finalCachedSizeWithUrl:url];
@@ -57,7 +72,7 @@
     [self cancelDownloadWithUrl:url];
     NSInteger cachedSize = [[ShortMediaCache shareCache] cachedSizeWithUrl:url];
     NSMutableURLRequest *downloadRequest = [NSMutableURLRequest requestWithURL:url];
-    NSString *range = [NSString stringWithFormat:@"bytes=%d-", cachedSize];
+    NSString *range = [NSString stringWithFormat:@"bytes=%ld-", (long)cachedSize];
     [downloadRequest setValue:range forHTTPHeaderField:@"Range"];
     downloadRequest.HTTPShouldHandleCookies = (options & ShortMediaOptionsHandleCookies);
     downloadRequest.HTTPShouldUsePipelining = YES;
@@ -74,16 +89,23 @@
     if(_userName && _password) {
         downloadOperation.credential = [NSURLCredential credentialWithUser:_userName password:_password persistence:NSURLCredentialPersistenceForSession];
     }
+    downloadOperation.isPreloading = preload;
     Lock();
+    if(!preload) {
+        NSMutableArray *needCancelUrls = [NSMutableArray array];
+        for (NSURL *url in _operationCache.allKeys) {
+            ShortMediaDownloadOperation *operation = _operationCache[url];
+            if(operation.isPreloading) {
+                [needCancelUrls addObject:url];
+            }
+        }
+        for (NSURL *url in needCancelUrls) {
+            [_operationCache removeObjectForKey:url];
+        }
+    }
     [_operationCache setObject:downloadOperation forKey:url];
     [_queue addOperation:downloadOperation];
     UnLock();
-}
-
-- (void)preloadMediaWithUrl:(NSURL *)url
-                    options:(ShortMediaOptions)options
-                   progress:(ShortMediaProgressBlock)progress
-                 completion:(ShortMediaCompletionBlock)completion {
 }
 
 - (void)cancelDownloadWithUrl:(NSURL *)url {
