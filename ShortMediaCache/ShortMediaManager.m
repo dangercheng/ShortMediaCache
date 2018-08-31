@@ -116,7 +116,7 @@
     [[ShortMediaCache shareCache] cleanCache];
 }
 
-- (void)resetPreloadingWithMediaUrls:(NSArray *)mediaUrls {
+- (void)resetPreloadingWithMediaUrls:(NSArray<NSURL *> *)mediaUrls {
     for (NSURL *url in mediaUrls) {
         [[ShortMediaDownloader shareDownloader] cancelDownloadWithUrl:url];
     }

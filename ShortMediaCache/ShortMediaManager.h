@@ -35,6 +35,6 @@
 
 - (void)cleanCache;
 
-- (void)resetPreloadingWithMediaUrls:(NSArray *)mediaUrls;
+- (void)resetPreloadingWithMediaUrls:(NSArray<NSURL *> *)mediaUrls;
 
 @end

@@ -83,19 +83,21 @@
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didEndDisplayingCell:(UICollectionViewCell *)cell forItemAtIndexPath:(NSIndexPath *)indexPath {
-    NSLog(@"1====>cell %@ enddisplay index: %d, visibleCells: %@",cell, indexPath.row, collectionView.visibleCells);
-    CGRect showRect = [cell convertRect:cell.frame toView:collectionView];
+    NSLog(@"1====>enddisplay index: %ld, cell: %@, visibleCells: %@",(long)indexPath.row, cell, collectionView.visibleCells);
     PlayerCell *playerCell = (PlayerCell*)cell;
-    [playerCell stopPlay];
+    NSString *videoStr = [_videoUrls objectAtIndex:indexPath.row];
+    [playerCell stopPlayWithUrl:[NSURL URLWithString:videoStr]];
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    NSInteger index = scrollView.contentOffset.y / _collectionView.frame.size.height;
-    NSArray *visibleCells = _collectionView.visibleCells;
-    PlayerCell *cell = visibleCells.firstObject;
-    NSString *videoStr = [_videoUrls objectAtIndex:index];
-    dispatch_after(0.5, dispatch_get_main_queue(), ^{
-        NSLog(@"2====>scroll to cell %@ index: %ld",cell, (long)index);
+    __weak typeof(self) _self = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        __strong typeof(_self) self = _self;
+        NSInteger index = scrollView.contentOffset.y / self.collectionView.frame.size.height;
+        NSArray *visibleCells = self.collectionView.visibleCells;
+        NSString *videoStr = [self.videoUrls objectAtIndex:index];
+        PlayerCell *cell = visibleCells.lastObject;
+        NSLog(@"2====>scroll to cell %@ index: %ld, visibleCells:%d",cell, (long)index, visibleCells.count);
         [cell playVideoWithUrl:[NSURL URLWithString:videoStr]];
         [self resetPreloadWithIndex:index];
     });

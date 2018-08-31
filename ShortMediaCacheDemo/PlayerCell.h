@@ -11,8 +11,8 @@
 @interface PlayerCell : UICollectionViewCell
 @property (weak, nonatomic) IBOutlet UIView *playerView;
 
-- (void)stopPlay;
+- (void)stopPlayWithUrl:(NSURL *)videoUrl;
 
-- (void)playVideoWithUrl:(NSURL *)videlUrl;
+- (void)playVideoWithUrl:(NSURL *)videoUrl;
 
 @end

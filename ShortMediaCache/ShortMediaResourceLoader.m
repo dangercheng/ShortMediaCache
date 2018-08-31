@@ -11,7 +11,6 @@
 #import <MobileCoreServices/MobileCoreServices.h>
 
 @interface ShortMediaResourceLoader()<AVAssetResourceLoaderDelegate>
-@property (nonatomic, strong, readonly) NSURL *url;
 @property (nonatomic, strong) NSMutableArray *pendingRequests;
 @property (nonatomic, assign) NSInteger expectedSize;
 @property (nonatomic, assign) NSInteger receivedSize;
@@ -73,7 +72,7 @@
 }
 
 #pragma mark - AVAssetResourceLoaderDelegate
-- (BOOL)resourceLoader:(AVAssetResourceLoader *)resourceLoader shouldWaitForLoadingOfRequestedResource:(AVAssetResourceLoadingRequest *)loadingRequest{
+- (BOOL)resourceLoader:(AVAssetResourceLoader *)resourceLoader shouldWaitForLoadingOfRequestedResource:(AVAssetResourceLoadingRequest *)loadingRequest {
     if (resourceLoader && loadingRequest) {
         loadingRequest.dataRequest.respondedSize = 0;
         [self.pendingRequests addObject:loadingRequest];
@@ -82,7 +81,7 @@
     return YES;
 }
 
-- (void)resourceLoader:(AVAssetResourceLoader *)resourceLoader didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest{
+- (void)resourceLoader:(AVAssetResourceLoader *)resourceLoader didCancelLoadingRequest:(AVAssetResourceLoadingRequest *)loadingRequest {
     if (!loadingRequest.isFinished) {
         [loadingRequest finishLoadingWithError:[self loaderCancelledError]];
     }

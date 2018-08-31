@@ -258,7 +258,7 @@ static NSString *const kMediaTrashDirectoryName = @"trash";
     
     for (NSURL *fileURL in urlsToDelete) {
         NSString *trashPath = [_trashPath stringByAppendingPathComponent:fileURL.lastPathComponent];
-        [fileManager moveItemAtPath:fileURL.absoluteString toPath:trashPath error:nil];
+        [fileManager moveItemAtPath:fileURL.path toPath:trashPath error:nil];
     }
     
     if (maxSize > 0 && remainingSize > maxSize) {
@@ -270,7 +270,7 @@ static NSString *const kMediaTrashDirectoryName = @"trash";
         
         for (NSURL *fileURL in sortedFiles) {
             NSString *trashPath = [_trashPath stringByAppendingPathComponent:fileURL.lastPathComponent];
-            if([fileManager moveItemAtPath:fileURL.absoluteString toPath:trashPath error:nil]) {
+            if([fileManager moveItemAtPath:fileURL.path toPath:trashPath error:nil]) {
                 NSDictionary<NSString *, id> *resourceValues = remainningFiles[fileURL];
                 NSNumber *totalAllocatedSize = resourceValues[NSURLTotalFileAllocatedSizeKey];
                 remainingSize -= totalAllocatedSize.unsignedIntegerValue;

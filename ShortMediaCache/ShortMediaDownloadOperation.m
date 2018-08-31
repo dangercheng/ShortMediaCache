@@ -105,7 +105,7 @@ didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
     if (![response respondsToSelector:@selector(statusCode)] || ([((NSHTTPURLResponse *)response) statusCode] < 400 && [((NSHTTPURLResponse *)response) statusCode] != 304)) {
         NSInteger expected = response.expectedContentLength > 0 ? (NSInteger)response.expectedContentLength : 0;
-        NSString *rangeHead = [_request valueForHTTPHeaderField:@"range"];
+        NSString *rangeHead = [_request valueForHTTPHeaderField:@"Range"];
         NSInteger startOffset = 0;
         if(rangeHead && rangeHead.length >= 7) {
             NSString *startOffsetStr = [rangeHead substringWithRange:NSMakeRange(6, rangeHead.length - 7)];

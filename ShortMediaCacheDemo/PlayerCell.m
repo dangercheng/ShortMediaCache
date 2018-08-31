@@ -51,10 +51,13 @@
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    [self stopPlay];
+    [self stopPlayWithUrl:_resourceLoader.url];
 }
 
-- (void)stopPlay {
+- (void)stopPlayWithUrl:(NSURL *)videoUrl {
+    if(![videoUrl isEqual:_resourceLoader.url]) {
+        return;
+    }
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     if(_player) {
         [_player pause];

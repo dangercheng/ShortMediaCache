@@ -17,6 +17,8 @@
 
 - (instancetype)initWithDelegate:(id<ShortMediaResourceLoaderDelegate>)delegate;
 
+@property (nonatomic, strong, readonly) NSURL *url;
+
 @property (nonatomic, weak) id<ShortMediaResourceLoaderDelegate> delegate;
 
 - (AVPlayerItem *)playItemWithUrl:(NSURL *)url;
