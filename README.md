@@ -10,11 +10,17 @@ A Cache Library based on AVPLayer for short video on ios, you can creat AVPlayer
 - **3.Support preloading, Play the next video in one second**
 - **4.Automatic cache management**
 
-## How to use
+## Installation
+
+**cocoapods**
+
+```
+pod 'ShortMediaCache'
+```
+
+## Usage
 
 **Normal**
-
-Download the source file and import the 'ShortMediaCache' folder into the project.
 
 ```
 #import "ShortMediaResourceLoader.h"
