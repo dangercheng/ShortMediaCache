@@ -132,7 +132,7 @@
     });
 }
 
-- (void)sesetCacheWithConfig:(ShortMediaCacheConfig *)cacheConfig completion:(CompletionBlock)completion {
+- (void)resetCacheWithConfig:(ShortMediaCacheConfig *)cacheConfig completion:(CompletionBlock)completion {
    __weak typeof(self) _self = self;
     dispatch_async(_fileQueue, ^{
         __strong typeof(_self) self = _self;
